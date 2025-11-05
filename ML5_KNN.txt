@@ -1,0 +1,76 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import confusion_matrix, accuracy_score, classification_report
+
+# Step 2: Load dataset
+df = pd.read_csv("diabetes.csv")
+print("First five rows of dataset:")
+print(df.head())
+print("\nShape of dataset:", df.shape)
+
+# Step 3: Data Pre-processing
+# Check for missing values
+print("\nMissing values in dataset:\n", df.isnull().sum())
+
+# Separate features (X) and target (y)
+X = df.drop('Outcome', axis=1)   # 'Outcome' is usually the target column in diabetes dataset
+y = df['Outcome']
+
+# Split data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42)
+
+# Feature scaling (KNN is distance-based → scaling is important)
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+
+# Step 4: Fitting the K-NN algorithm to the Training set
+knn = KNeighborsClassifier(n_neighbors=5)  # You can tune n_neighbors
+knn.fit(X_train, y_train)
+
+# Step 5: Predicting the Test set results
+y_pred = knn.predict(X_test)
+
+# Step 6: Evaluate model performance
+cm = confusion_matrix(y_test, y_pred)
+acc = accuracy_score(y_test, y_pred)
+error_rate = 1 - acc
+
+# Get precision, recall, f1-score
+report = classification_report(y_test, y_pred, output_dict=True)
+precision = report['1']['precision']
+recall = report['1']['recall']
+
+print("\nConfusion Matrix:\n", cm)
+print("\nAccuracy:", round(acc, 4))
+print("Error Rate:", round(error_rate, 4))
+print("Precision:", round(precision, 4))
+print("Recall:", round(recall, 4))
+
+# Step 7: Visualization
+plt.figure(figsize=(6,4))
+sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False)
+plt.title('Confusion Matrix for KNN on Diabetes Dataset')
+plt.xlabel('Predicted Label')
+plt.ylabel('True Label')
+plt.show()
+
+# Optional: Error rate vs. K visualization
+error_rates = []
+for k in range(1, 21):
+    knn_temp = KNeighborsClassifier(n_neighbors=k)
+    knn_temp.fit(X_train, y_train)
+    pred_k = knn_temp.predict(X_test)
+    error_rates.append(np.mean(pred_k != y_test))
+
+plt.figure(figsize=(8,5))
+plt.plot(range(1, 21), error_rates, color='red', linestyle='dashed', marker='o')
+plt.title('Error Rate vs K Value')
+plt.xlabel('K')
+plt.ylabel('Error Rate')
+plt.show()

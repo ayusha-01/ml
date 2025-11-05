@@ -1,0 +1,60 @@
+import sympy as sp
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Ask user for the function
+user_input = input("Enter the function f(x): ")  # e.g., (x+3)**2
+
+# Define the symbol
+x = sp.symbols('x')
+
+# Convert input string to a sympy expression
+f_expr = sp.sympify(user_input)
+
+# Compute gradient (derivative)
+grad_expr = sp.diff(f_expr, x)
+
+# Convert expressions to numerical functions
+f = sp.lambdify(x, f_expr, 'numpy')
+grad_f = sp.lambdify(x, grad_expr, 'numpy')
+
+# Gradient Descent Algorithm
+def gradient_descent_user(starting_point, grad_func, learning_rate, max_iter, tolerance=0.01):
+    x_val = starting_point
+    x_history = [x_val]
+    
+    for i in range(max_iter):
+        gradient = grad_func(x_val)
+        x_new = x_val - learning_rate * gradient
+        print(f"Iteration {i+1}: x = {x_new:.6f}, f(x) = {f(x_new):.6f}")
+        
+        x_history.append(x_new)
+        
+        if abs(x_new - x_val) < tolerance:
+            print("Convergence reached!")
+            break
+        x_val = x_new
+    
+    return x_val, x_history
+
+# Parameters
+starting_point = float(input("Enter starting point: "))
+learning_rate = float(input("Enter learning rate: "))
+max_iterations = int(input("Enter maximum number of iterations: "))
+
+# Run Gradient Descent
+local_minima, x_history = gradient_descent_user(starting_point, grad_f, learning_rate, max_iterations)
+print(f"\nLocal minima is at x = {local_minima:.6f}, f(x) = {f(local_minima):.6f}")
+
+# Quick Visualization
+x_range = np.linspace(min(x_history) - 2, max(x_history) + 2, 400)
+plt.plot(x_range, f(x_range), 'b-', linewidth=2, label='f(x)')
+plt.plot(x_history, [f(x) for x in x_history], 'ro-', markersize=8, label='Descent Path')
+plt.plot(x_history[0], f(x_history[0]), 'go', markersize=12, label='Start')
+plt.plot(x_history[-1], f(x_history[-1]), 'r*', markersize=15, label='Minimum')
+plt.xlabel('x')
+plt.ylabel('f(x)')
+plt.title('Gradient Descent Convergence')
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.show()

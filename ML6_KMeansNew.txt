@@ -1,0 +1,79 @@
+!pip install kneed -q
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import KMeans
+from kneed import KneeLocator
+
+# ---------------------------
+# Step 1: Load Dataset
+# ---------------------------
+file_name = list(uploaded.keys())[0]
+df = pd.read_csv("sales_data_sample.csv", encoding='latin1')
+
+print("Dataset loaded. First 5 rows:")
+print(df.head())
+print("\nShape:", df.shape)
+
+# ---------------------------
+# Step 2: Select Numeric Features
+# ---------------------------
+num_df = df.select_dtypes(include=[np.number]).dropna()
+print("\nNumeric features used for clustering:", list(num_df.columns))
+
+# ---------------------------
+# Step 3: Scale Features
+# ---------------------------
+scaler = StandardScaler()
+scaled_data = scaler.fit_transform(num_df)
+
+# ---------------------------
+# Step 4: Elbow Method to Find Optimal K
+# ---------------------------
+inertia = []
+K = range(1, 11)
+for k in K:
+    kmeans = KMeans(n_clusters=k, random_state=42, n_init=5, max_iter=100)
+    kmeans.fit(scaled_data)
+    inertia.append(kmeans.inertia_)
+
+# Automatic elbow detection
+kneedle = KneeLocator(K, inertia, curve='convex', direction='decreasing')
+optimal_k = kneedle.elbow
+print(f"\n✅ Optimal number of clusters: {optimal_k}")
+
+# Plot Elbow Curve
+plt.figure(figsize=(7,4))
+plt.plot(K, inertia, 'bx-', label='Inertia')
+plt.vlines(optimal_k, plt.ylim()[0], plt.ylim()[1], linestyles='dashed', colors='r', label=f'Optimal K={optimal_k}')
+plt.xlabel('Number of Clusters (K)')
+plt.ylabel('Inertia')
+plt.title('Elbow Method')
+plt.legend()
+plt.show()
+
+# ---------------------------
+# Step 5: Train K-Means with Optimal K
+# ---------------------------
+kmeans = KMeans(n_clusters=optimal_k, random_state=42, n_init=5, max_iter=100)
+df['Cluster'] = kmeans.fit_predict(scaled_data)
+
+print("\nFirst 10 rows with cluster labels:")
+print(df.head(10))
+
+# ---------------------------
+# Step 6: Cluster Visualization (Scatter Plot)
+# ---------------------------
+# If at least 2 numeric columns, plot first two as X and Y
+if num_df.shape[1] >= 2:
+    plt.figure(figsize=(7,5))
+    plt.scatter(df[num_df.columns[0]], df[num_df.columns[1]], c=df['Cluster'], cmap='viridis', s=50, alpha=0.7)
+    plt.xlabel(num_df.columns[0])
+    plt.ylabel(num_df.columns[1])
+    plt.title('K-Means Clustering Visualization')
+    plt.colorbar(label='Cluster')
+    plt.show()
+else:
+    print("\nNot enough numeric features for 2D scatter plot.")

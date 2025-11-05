@@ -1,0 +1,92 @@
+df = pd.read_csv("emails.csv")
+
+print(df.head())
+
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.svm import SVC
+from sklearn.metrics import confusion_matrix, accuracy_score, classification_report
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Load dataset
+df = pd.read_csv("emails.csv")
+print(df.head())
+print(df.columns)
+
+# ---------------------------
+# STEP 1: Split features and labels
+# ---------------------------
+
+# Drop the first column (Email No.) and last column (Prediction)
+X = df.drop(['Email No.', 'Prediction'], axis=1)
+y = df['Prediction']
+
+# ---------------------------
+# STEP 2: Split train-test
+# ---------------------------
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+# ---------------------------
+# STEP 3: Scale features
+# ---------------------------
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+
+# ---------------------------
+# STEP 4: KNN Classification
+# ---------------------------
+knn = KNeighborsClassifier(n_neighbors=5)
+knn.fit(X_train, y_train)
+y_pred_knn = knn.predict(X_test)
+
+cm_knn = confusion_matrix(y_test, y_pred_knn)
+acc_knn = accuracy_score(y_test, y_pred_knn)
+print("KNN Accuracy:", acc_knn)
+print(classification_report(y_test, y_pred_knn))
+
+plt.figure(figsize=(5,4))
+sns.heatmap(cm_knn, annot=True, fmt='d', cmap='Blues')
+plt.title("KNN Confusion Matrix")
+plt.xlabel("Predicted")
+plt.ylabel("Actual")
+plt.show()
+
+# ---------------------------
+# STEP 5: SVM Classification
+# ---------------------------
+svm = SVC(kernel='linear', random_state=42)
+svm.fit(X_train, y_train)
+y_pred_svm = svm.predict(X_test)
+
+cm_svm = confusion_matrix(y_test, y_pred_svm)
+acc_svm = accuracy_score(y_test, y_pred_svm)
+print("SVM Accuracy:", acc_svm)
+print(classification_report(y_test, y_pred_svm))
+
+plt.figure(figsize=(5,4))
+sns.heatmap(cm_svm, annot=True, fmt='d', cmap='Greens')
+plt.title("SVM Confusion Matrix")
+plt.xlabel("Predicted")
+plt.ylabel("Actual")
+plt.show()
+
+# ---------------------------
+# STEP 6: Compare Accuracy
+# ---------------------------
+models = pd.DataFrame({
+    'Model': ['KNN', 'SVM'],
+    'Accuracy': [acc_knn, acc_svm]
+})
+plt.bar(models['Model'], models['Accuracy'], color=['skyblue', 'lightgreen'])
+plt.ylim(0.8, 1.0)
+plt.title("Model Accuracy Comparison")
+plt.show()
+
+print(models)
